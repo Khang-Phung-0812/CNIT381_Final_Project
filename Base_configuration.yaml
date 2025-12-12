@@ -1,0 +1,45 @@
+---
+- name: Base configuration
+  hosts: routers:switches
+  connection: network_cli
+  gather_facts: no
+
+  vars:
+    base_config:
+      router1:
+        hostname: Router1
+        interfaces:
+          - name: GigabitEthernet0/0
+            description: "Connection to MLS1"
+      router2:
+        hostname: Router2
+        interfaces:
+          - name: GigabitEthernet0/0
+            description: "Connection to MLS1"
+      switch1:
+        hostname: Switch1
+        interfaces:
+          - name: GigabitEthernet1/0/1
+            description: "Connection to R1"
+          - name: GigabitEthernet1/0/2
+            description: "Connection to R2"
+          - name: GigabitEthernet1/0/3
+            description: "Connection to PC1"
+
+  tasks:
+    - name: Configure hostname
+      ios_config:
+        lines:
+          - "hostname {{ base_config[inventory_hostname].hostname }}"
+
+    - name: Configure interface descriptions
+      ios_config:
+        parents: "interface {{ item.name }}"
+        lines:
+          - "description {{ item.description }}"
+      loop: "{{ base_config[inventory_hostname].interfaces | default([]) }}"
+
+    - name: Configure login banner (MOTD)
+      ios_config:
+        lines:
+          - 'banner motd ^UNAUTHORIZED ACCESS TO THIS DEVICE IS PROHIBITED - CNIT 381 FINAL PROJECT^'
