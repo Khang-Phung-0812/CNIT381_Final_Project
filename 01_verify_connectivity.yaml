@@ -1,0 +1,14 @@
+---
+- name: Test Connectivity and Show Version
+  hosts: routers:switches
+  gather_facts: no
+  tasks:
+    - name: Test connection and show version
+      ios_command:
+        commands: show version
+      register: version_output
+ 
+    - name: Display version summary
+      debug:
+        msg: "Device {{ inventory_hostname }} version: {{ version_output.stdout_lines[0][0:50] }}"
+ 
