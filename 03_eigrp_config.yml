@@ -1,0 +1,58 @@
+---
+- name: Configure EIGRP and loopbacks on routers
+  hosts: routers
+  connection: network_cli
+  gather_facts: no
+
+  vars:
+    eigrp_as: 100
+
+    # Per-router IP plan for loopbacks and EIGRP networks
+    eigrp_config:
+      router1:
+        loopbacks:
+          - { name: Loopback0, ip: 172.16.1.10, mask: 255.255.255.255 }
+          - { name: Loopback1, ip: 172.16.2.10, mask: 255.255.255.255 }
+          - { name: Loopback2, ip: 172.16.3.10, mask: 255.255.255.255 }
+        networks:
+          - { ip: 192.168.1.0,  wildcard: 0.0.0.255 }   # R1–SW1 /24
+          - { ip: 172.16.1.10, wildcard: 0.0.0.0 }     # Loopback0
+          - { ip: 172.16.2.10, wildcard: 0.0.0.0 }     # Loopback1
+          - { ip: 172.16.3.10, wildcard: 0.0.0.0 }     # Loopback2
+          - { ip: 192.168.10.0, wildcard: 0.0.0.255 }  # VLAN 10 mgmt
+          - { ip: 192.168.20.0, wildcard: 0.0.0.255 }  # VLAN 20 data
+          - { ip: 192.168.30.0, wildcard: 0.0.0.255 }  # VLAN 30 voice
+
+      router2:
+        loopbacks:
+          - { name: Loopback0, ip: 172.16.4.10, mask: 255.255.255.255 }
+          - { name: Loopback1, ip: 172.16.5.10, mask: 255.255.255.255 }
+          - { name: Loopback2, ip: 172.16.6.10, mask: 255.255.255.255 }
+        networks:
+          - { ip: 192.168.1.0,  wildcard: 0.0.0.255 }   # R2–SW1 /24
+          - { ip: 172.16.4.10, wildcard: 0.0.0.0 }     # Loopback0
+          - { ip: 172.16.5.10, wildcard: 0.0.0.0 }     # Loopback1
+          - { ip: 172.16.6.10, wildcard: 0.0.0.0 }     # Loopback2
+
+  tasks:
+
+    - name: Create loopback interfaces
+      ios_config:
+        parents: "interface {{ item.name }}"
+        lines:
+          - "ip address {{ item.ip }} {{ item.mask }}"
+          - "no shutdown"
+      loop: "{{ eigrp_config[inventory_hostname].loopbacks }}"
+
+    - name: Ensure EIGRP process {{ eigrp_as }} exists and basic settings
+      ios_config:
+        parents: "router eigrp {{ eigrp_as }}"
+        lines:
+          - "no auto-summary"
+
+    - name: Advertise all networks in EIGRP
+      ios_config:
+        parents: "router eigrp {{ eigrp_as }}"
+        lines:
+          - "network {{ item.ip }} {{ item.wildcard }}"
+      loop: "{{ eigrp_config[inventory_hostname].networks }}"
