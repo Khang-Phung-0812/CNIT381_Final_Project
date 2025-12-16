@@ -47,4 +47,6 @@
           - "switchport mode access"
           - "switchport access vlan {{ item.vlan }}"
           - "no shutdown"
+        match: none
       loop: "{{ access_ports }}"
+
