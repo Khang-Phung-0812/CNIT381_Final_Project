@@ -7,6 +7,7 @@
   vars:
     # VLANs that match your addressing plan
     vlans:
+      - { id: 1, name: Default }
       - { id: 10, name: Management }
       - { id: 20, name: Data }
       - { id: 30, name: Voice }
@@ -14,6 +15,7 @@
     # Port from Switch1 toward Router1 that should carry all VLANs
     trunk_interfaces:
       - GigabitEthernet1/0/1
+      - GigabitEthernet1/0/2
 
     # Access ports for end devices (PCs) on the Data VLAN
     access_ports:
